@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Live Hub — Radio, Scores &amp; TV</title>
+<meta name="description" content="One home for Live Radio, Live Score and Live TV — free, no-signup, no-backend.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0c'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23d7ff4b' stroke-width='7'/%3E%3Ccircle cx='50' cy='50' r='7' fill='%23d7ff4b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shell.css">
+</head>
+<body>
+
+<!-- ============ HOME SCREEN ============ -->
+<div class="home" id="homeScreen">
+  <div class="home-inner">
+    <header class="home-head">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <h1>Live Hub</h1>
+      </div>
+      <p class="home-tagline">Radio, scores and TV — three free, no-signup, no-backend apps in one place.</p>
+    </header>
+
+    <div class="app-grid" id="appGrid" role="list">
+
+      <button class="app-card" data-app="tv" style="--accent:#34d399; --accent-ink:#07160f;" role="listitem">
+        <span class="app-card-glow" aria-hidden="true"></span>
+        <span class="app-card-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 21h8M12 19v2M8 3l4 3 4-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="app-card-body">
+          <span class="app-card-name">Live TV</span>
+          <span class="app-card-desc">Free-to-air channels, grouped and searchable, streaming straight in the browser.</span>
+        </span>
+        <span class="app-card-cta">
+          Open
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button class="app-card" data-app="radio" style="--accent:#d7ff4b; --accent-ink:#10130a;" role="listitem">
+        <span class="app-card-glow" aria-hidden="true"></span>
+        <span class="app-card-icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="app-card-body">
+          <span class="app-card-name">Live Radio</span>
+          <span class="app-card-desc">Thousands of stations from around the world, browsable by country.</span>
+        </span>
+        <span class="app-card-cta">
+          Open
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button class="app-card" data-app="scores" style="--accent:#ff4136; --accent-ink:#180706;" role="listitem">
+        <span class="app-card-glow" aria-hidden="true"></span>
+        <span class="app-card-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 6l1.6 11.2A2 2 0 0 0 7.6 19h8.8a2 2 0 0 0 2-1.8L20 6M9 10v5M15 10v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="app-card-body">
+          <span class="app-card-name">Live Score</span>
+          <span class="app-card-desc">Live scores, upcoming schedules and results across major sports leagues.</span>
+        </span>
+        <span class="app-card-cta">
+          Open
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      
+
+    </div>
+
+    <p class="home-foot">No accounts, no API keys, nothing tracked — each app runs entirely in your browser.</p>
+  </div>
+</div>
+
+<!-- ============ APP VIEW (iframe host) ============ -->
+<div class="app-view" id="appView" hidden>
+  <div class="app-bar">
+    <button class="back-btn" id="backBtn" title="Back to home">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Home</span>
+    </button>
+    <div class="app-bar-title">
+      <span class="app-bar-dot" id="appBarDot" aria-hidden="true"></span>
+      <span id="appBarName">—</span>
+    </div>
+    <button class="reload-btn" id="syncBtn" title="Sync favorites (user.db)" hidden>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M7.5 15.5 2 6l3-5h9l5.5 9.5M7.5 15.5H18M7.5 15.5 4.5 20.5h9L18 15.5m-5.5-9.5L18 15.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="reload-btn" id="reloadBtn" title="Reload this app">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 1 3 6.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 12V6M3 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <iframe id="appFrame" title="App" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>
