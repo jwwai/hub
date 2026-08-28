@@ -1111,6 +1111,19 @@
 
 </div>
 
+<!-- ============ DRIVE SYNC MODAL (opened from the Live Hub shell's top bar) ============ -->
+<div class="sync-modal-backdrop" id="driveSyncBackdrop" hidden>
+  <div class="sync-modal" role="dialog" aria-modal="true" aria-labelledby="driveSyncModalTitle">
+    <h4 id="driveSyncModalTitle">Favorites Sync</h4>
+    <p>Keeps this app's favorites in the same <code>user.db</code> file on Google Drive that Live Radio also syncs to, so both apps share one favorites store across devices.</p>
+    <p class="sync-status" id="driveSyncStatus">Not signed in</p>
+    <div class="sync-modal-actions">
+      <button type="button" class="sync-btn-ghost" id="driveSyncClose">Close</button>
+      <button type="button" class="sync-btn-solid" id="driveSyncBtn">Sign in</button>
+    </div>
+  </div>
+</div>
+
 <script defer>
 (function(){
   const SOURCES = {
@@ -2409,30 +2422,52 @@
     if(e.data && e.data.type === 'liveHub:openSync') openDriveSyncModal();
   });
 
-  function initGoogleDriveSync(){
-    if(!MY_GOOGLE_CLIENT_ID || !DRIVE_FILE_ID) return; // feature not configured
-    if(!window.google || !google.accounts || !google.accounts.oauth2){
-      // Google Identity Services script may not have finished loading
-      // yet (it's `defer`red like everything else) — retry shortly
-      // rather than giving up on the very first check.
-      setTimeout(initGoogleDriveSync, 300);
-      return;
-    }
-    const closeBtn = document.getElementById('driveSyncClose');
-    const backdrop = document.getElementById('driveSyncBackdrop');
-    if(closeBtn) closeBtn.addEventListener('click', closeDriveSyncModal);
-    if(backdrop) backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeDriveSyncModal(); });
-
+  // Builds the Google Identity Services token client the first moment
+  // GIS is actually ready — safe to call repeatedly (no-ops once built).
+  // Returns whether it's ready to use right now.
+  function tryInitDriveTokenClient(){
+    if(driveTokenClient) return true;
+    if(!window.google || !google.accounts || !google.accounts.oauth2) return false;
     driveTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: MY_GOOGLE_CLIENT_ID,
       scope: DRIVE_SCOPE,
       callback: async (resp)=>{
-        if(resp.error){ showToast('Google sign-in failed or was cancelled.'); return; }
+        if(resp.error){ setDriveSyncStatus('Sign-in failed or was cancelled.', 'is-error'); return; }
         driveAccessToken = resp.access_token;
         setDriveSyncStatus('Syncing…');
         await syncFavoritesWithDrive();
       }
     });
+    return true;
+  }
+
+  // Polls in the background so GIS loading late (slow network, an
+  // extension delaying it, etc.) still resolves on its own — but never
+  // blocks the Sign in button from being clickable in the meantime, and
+  // gives up with a clear, visible message after ~10s rather than
+  // retrying forever in silence.
+  function pollDriveGis(attempt){
+    if(tryInitDriveTokenClient()){
+      if(attempt > 0) setDriveSyncStatus('Ready — click Sign in.');
+      return;
+    }
+    if(attempt >= 20){
+      setDriveSyncStatus('Couldn\u2019t load Google Sign-In. This is usually an ad blocker/privacy extension or a network/firewall blocking accounts.google.com \u2014 allow it for this site, then reload the app.', 'is-error');
+      return;
+    }
+    setTimeout(()=>pollDriveGis(attempt + 1), 500);
+  }
+
+  function initGoogleDriveSync(){
+    if(!MY_GOOGLE_CLIENT_ID || !DRIVE_FILE_ID) return; // feature not configured
+    const closeBtn = document.getElementById('driveSyncClose');
+    const backdrop = document.getElementById('driveSyncBackdrop');
+    if(closeBtn) closeBtn.addEventListener('click', closeDriveSyncModal);
+    if(backdrop) backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeDriveSyncModal(); });
+
+    // Wired up immediately — NOT gated behind GIS having finished
+    // loading — so clicking Sign in always does something visible, even
+    // if GIS is still loading or never manages to load at all.
     driveSyncBtnEl().addEventListener('click', ()=>{
       if(driveAccessToken){
         // "Sign out" here just drops the in-memory token — it does NOT
@@ -2446,8 +2481,15 @@
         showToast('Signed out of Google Drive sync (local favorites are untouched).');
         return;
       }
-      driveTokenClient.requestAccessToken({prompt: driveAccessToken ? '' : 'consent'});
+      if(!tryInitDriveTokenClient()){
+        setDriveSyncStatus('Loading Google Sign-In…');
+        pollDriveGis(1);
+        return;
+      }
+      driveTokenClient.requestAccessToken({prompt: 'consent'});
     });
+
+    pollDriveGis(0); // kick off a background readiness check right away too
   }
 
   function setDriveSyncStatus(text, kind){
@@ -5134,18 +5176,5 @@
   initGoogleDriveSync(); // no-op unless MY_GOOGLE_CLIENT_ID is actually set
 })();
 </script>
-<!-- ============ DRIVE SYNC MODAL (opened from the Live Hub shell's top bar) ============ -->
-<div class="sync-modal-backdrop" id="driveSyncBackdrop" hidden>
-  <div class="sync-modal" role="dialog" aria-modal="true" aria-labelledby="driveSyncModalTitle">
-    <h4 id="driveSyncModalTitle">Favorites Sync</h4>
-    <p>Sign in to sync favourites.</p>
-    <p class="sync-status" id="driveSyncStatus">Not signed in</p>
-    <div class="sync-modal-actions">
-      <button type="button" class="sync-btn-ghost" id="driveSyncClose">Close</button>
-      <button type="button" class="sync-btn-solid" id="driveSyncBtn">Sign in</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
