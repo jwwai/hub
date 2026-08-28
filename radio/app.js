@@ -214,14 +214,12 @@
     if (actionBtn) actionBtn.textContent = driveAccessToken ? 'Sign out' : 'Sign in with Google';
   }
 
-  function initGoogleDriveSync() {
-    if (!DRIVE_CLIENT_ID || !DRIVE_FILE_ID) return; // feature not configured
-    if (!window.google || !google.accounts || !google.accounts.oauth2) {
-      setTimeout(initGoogleDriveSync, 300); // GIS script is `defer`red, may not be ready yet
-      return;
-    }
-    const { actionBtn, closeBtn, backdrop } = driveModalEls();
-
+  // Builds the Google Identity Services token client the first moment
+  // GIS is actually ready — safe to call repeatedly (no-ops once built).
+  // Returns whether it's ready to use right now.
+  function tryInitDriveTokenClient() {
+    if (driveTokenClient) return true;
+    if (!window.google || !google.accounts || !google.accounts.oauth2) return false;
     driveTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: DRIVE_CLIENT_ID,
       scope: DRIVE_SCOPE,
@@ -232,9 +230,36 @@
         await syncFavoritesWithDrive();
       },
     });
+    return true;
+  }
+
+  // Polls in the background so GIS loading late (slow network, an
+  // extension delaying it, etc.) still resolves on its own — but never
+  // blocks the Sign in button from being clickable in the meantime, and
+  // gives up with a clear, visible message after ~10s rather than
+  // retrying forever in silence.
+  function pollDriveGis(attempt) {
+    if (tryInitDriveTokenClient()) {
+      if (attempt > 0) setDriveStatus('Ready — click Sign in with Google.');
+      return;
+    }
+    if (attempt >= 20) {
+      setDriveStatus('Couldn\u2019t load Google Sign-In. This is usually an ad blocker/privacy extension or a network/firewall blocking accounts.google.com \u2014 allow it for this site, then reload the app.', 'is-error');
+      return;
+    }
+    setTimeout(() => pollDriveGis(attempt + 1), 500);
+  }
+
+  function initGoogleDriveSync() {
+    if (!DRIVE_CLIENT_ID || !DRIVE_FILE_ID) return; // feature not configured
+    const { actionBtn, closeBtn, backdrop } = driveModalEls();
 
     if (closeBtn) closeBtn.addEventListener('click', closeDriveSyncModal);
     if (backdrop) backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.hidden = true; });
+
+    // Wired up immediately — NOT gated behind GIS having finished
+    // loading — so clicking Sign in always does something visible, even
+    // if GIS is still loading or never manages to load at all.
     if (actionBtn) actionBtn.addEventListener('click', () => {
       if (driveAccessToken) {
         // Drops the in-memory token only — doesn't revoke the app's Drive
@@ -245,8 +270,15 @@
         toast('Signed out of Drive sync (local favourites are untouched).');
         return;
       }
+      if (!tryInitDriveTokenClient()) {
+        setDriveStatus('Loading Google Sign-In…');
+        pollDriveGis(1);
+        return;
+      }
       driveTokenClient.requestAccessToken({ prompt: 'consent' });
     });
+
+    pollDriveGis(0); // kick off a background readiness check right away too
   }
 
   async function driveApiFetch(url, options) {
